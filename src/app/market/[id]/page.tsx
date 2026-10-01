@@ -68,7 +68,7 @@ export default function OpportunityPage() {
 
   const totals = useMemo(() => {
     if (!listing) return null;
-    const saving = listing.faceValue - listing.askingPrice;
+    const saving = (listing.bookValue ?? listing.faceValue) - listing.askingPrice;
     return { saving };
   }, [listing]);
 
@@ -130,8 +130,8 @@ export default function OpportunityPage() {
               {[
                 { k: "القيمة الاسمية", v: money(listing.faceValue), icon: <Receipt className="size-4" /> },
                 { k: "سعر العرض", v: money(listing.askingPrice), icon: <Wallet className="size-4" />, big: true },
-                { k: "الخصم", v: `${money(totals!.saving)}`, sub: pct(listing.discount), icon: <TrendingUp className="size-4" />, teal: true },
-                { k: "العائد التقديري", v: pct(listing.estimatedBuyerReturn), icon: <TrendingUp className="size-4" />, brand: true, hint: "تقدير تجريبي = العائد الأصلي + أثر الخصم موزّعًا على المدة المتبقية." },
+                { k: "الخصم", v: `${money(totals!.saving)}`, sub: pct(listing.discount), icon: <TrendingUp className="size-4" />, teal: true, hint: "الخصم عن القيمة الدفترية: الأصل مضافًا إليه الربح المستحق الذي لم يُصرف بعد." },
+                { k: "العائد التقديري", v: pct(listing.estimatedBuyerReturn), icon: <TrendingUp className="size-4" />, brand: true, hint: "العائد السنوي التقديري للمشتري حتى الاستحقاق عند سعر العرض." },
                 { k: "التوزيعات المتبقية", v: String(listing.remainingPayments), icon: <Receipt className="size-4" /> },
                 { k: "الاستحقاق", v: listing.maturityLabel, icon: <CalendarDays className="size-4" /> },
               ].map((m) => (

@@ -21,7 +21,8 @@ import { seedInvestments } from "@/data/investments";
 import { seedListings } from "@/data/listings";
 import { seedTransactions, seedNotifications } from "@/data/transactions";
 import { users as seedUsers } from "@/data/users";
-import { txId, nowLabel, estimateBuyerReturn, discountPct } from "@/lib/format";
+import { txId, nowLabel, discountPct } from "@/lib/format";
+import { buyerYield, remainingCashflows, bookValue } from "@/lib/pricing";
 
 /* ------------------------------------------------------------------ */
 
@@ -119,7 +120,8 @@ function reducer(state: State, action: Action): State {
       const inv = state.investments.find((i) => i.id === action.investmentId);
       if (!inv) return state;
       const face = Math.round((inv.principal * action.portion) / 100);
-      const disc = discountPct(face, action.askingPrice);
+      const book = bookValue(inv, action.portion);
+      const disc = discountPct(book, action.askingPrice);
       const listing: Listing = {
         id: `lst-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
         investmentId: inv.id,
@@ -130,15 +132,11 @@ function reducer(state: State, action: Action): State {
         platform: inv.platform,
         assetType: inv.assetType,
         faceValue: face,
+        bookValue: book,
         askingPrice: action.askingPrice,
         sellPortion: action.portion,
         discount: disc,
-        estimatedBuyerReturn: estimateBuyerReturn(
-          face,
-          action.askingPrice,
-          inv.expectedReturn,
-          inv.remainingMonths,
-        ),
+        estimatedBuyerReturn: buyerYield(action.askingPrice, remainingCashflows(inv, action.portion)),
         remainingMonths: inv.remainingMonths,
         remainingPayments: inv.remainingPayments,
         maturityLabel: inv.maturityLabel,
@@ -238,6 +236,10 @@ function reducer(state: State, action: Action): State {
             id: `${source.id}-${action.buyerId}`,
             ownerId: action.buyerId,
             principal: listing.faceValue,
+            distributions: source.distributions.map((d) => ({
+              ...d,
+              amount: Math.round((d.amount * listing.sellPortion) / 100),
+            })),
             status: "active",
             recovered: 0,
             sellable: true,

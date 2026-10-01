@@ -59,26 +59,6 @@ export const assetTypeLabel: Record<string, string> = {
   corporate: "تمويل شركات",
 };
 
-/**
- * تقدير تجريبي لعائد المشتري السنوي.
- * = العائد الأصلي + (نسبة الخصم مُسنوَنة على المدة المتبقية × معامل توقيت التدفقات).
- * معادلة مبسطة لأغراض العرض التجريبي فقط ولا تمثل حسابًا فعليًا لعائد الاستحقاق.
- */
-const CASHFLOW_TIMING_FACTOR = 0.95;
-
-export function estimateBuyerReturn(
-  faceValue: number,
-  askingPrice: number,
-  baseReturn: number,
-  remainingMonths: number,
-): number {
-  if (faceValue <= 0 || askingPrice <= 0 || remainingMonths <= 0) return baseReturn;
-  const discountPct = ((faceValue - askingPrice) / faceValue) * 100;
-  const annualized = (discountPct * 12) / remainingMonths;
-  const value = baseReturn + annualized * CASHFLOW_TIMING_FACTOR;
-  return Math.max(0, Math.round(value * 10) / 10);
-}
-
 export function discountPct(faceValue: number, askingPrice: number): number {
   if (faceValue <= 0) return 0;
   return Math.round(((faceValue - askingPrice) / faceValue) * 1000) / 10;

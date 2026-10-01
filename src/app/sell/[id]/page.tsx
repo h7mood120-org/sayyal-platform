@@ -8,7 +8,8 @@ import { useStore } from "@/lib/store";
 import { Breadcrumb } from "@/components/Shell";
 import { Panel, Modal, Tooltip, RiskBadge, EmptyState, AnimatedNumber } from "@/components/ui";
 import { PlatformChip } from "@/components/PlatformChip";
-import { money, pct, months, SAR, estimateBuyerReturn, discountPct, fmt } from "@/lib/format";
+import { money, pct, months, SAR, discountPct, fmt } from "@/lib/format";
+import { suggestPrice, buyerYield, priceZone, bookValue } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 export default function SellOrderPage() {
@@ -18,21 +19,24 @@ export default function SellOrderPage() {
   const inv = investments.find((i) => i.id === id);
 
   const [portion, setPortion] = useState(100);
-  const [price, setPrice] = useState<number>(() => (inv ? Math.round(inv.principal * 0.97) : 0));
-  const [priceText, setPriceText] = useState<string>(() =>
-    inv ? fmt(Math.round(inv.principal * 0.97)) : "",
-  );
+  const [price, setPrice] = useState<number>(() => (inv ? suggestPrice(inv).price : 0));
+  const [priceText, setPriceText] = useState<string>(() => (inv ? fmt(suggestPrice(inv).price) : ""));
+  const [showBasis, setShowBasis] = useState(false);
   const [done, setDone] = useState(false);
   const [newListingId, setNewListingId] = useState<string | null>(null);
 
   const face = useMemo(() => (inv ? Math.round((inv.principal * portion) / 100) : 0), [inv, portion]);
 
+  const suggestion = useMemo(() => (inv ? suggestPrice(inv, portion) : null), [inv, portion]);
+
   const derived = useMemo(() => {
-    if (!inv) return null;
-    const disc = discountPct(face, price);
-    const buyerReturn = estimateBuyerReturn(face, price, inv.expectedReturn, inv.remainingMonths);
-    return { disc, buyerReturn, fees: 0, net: price };
-  }, [inv, face, price]);
+    if (!inv || !suggestion) return null;
+    const book = bookValue(inv, portion);
+    const disc = discountPct(book, price);
+    const buyerReturn = buyerYield(price, suggestion.cashflows);
+    const vsSuggested = ((price - suggestion.price) / suggestion.price) * 100;
+    return { book, disc, buyerReturn, vsSuggested, zone: priceZone(price, suggestion.price), fees: 0, net: price };
+  }, [inv, portion, price, suggestion]);
 
   if (!inv) {
     return (
@@ -45,9 +49,12 @@ export default function SellOrderPage() {
     );
   }
 
-  const minPrice = Math.round(face * 0.85);
-  const maxPrice = face;
-  const speedPct = maxPrice === minPrice ? 0 : ((maxPrice - price) / (maxPrice - minPrice)) * 100;
+  const { price: suggestedPrice, minPrice, maxPrice } = suggestion!;
+  const zoneInfo = {
+    fast: { label: "بيع سريع متوقع", cls: "text-teal-400 border-teal-400/30 bg-teal-400/[0.08]" },
+    fair: { label: "البيع ممكن لكنه أبطأ", cls: "text-amber-300 border-amber-300/30 bg-amber-300/[0.08]" },
+    slow: { label: "البيع غير مرجّح بهذا السعر", cls: "text-rose-300 border-rose-300/30 bg-rose-300/[0.08]" },
+  }[derived!.zone];
 
   const setPriceSafe = (v: number) => {
     const clamped = Math.max(minPrice, Math.min(maxPrice, Math.round(v)));
@@ -104,6 +111,7 @@ export default function SellOrderPage() {
                 { k: "القيمة الاسمية", v: money(inv.principal) },
                 { k: "المتبقي حتى الاستحقاق", v: months(inv.remainingMonths) },
                 { k: "العائد", v: pct(inv.expectedReturn) },
+                { k: "صرف العائد", v: inv.payout === "maturity" ? "عند الاستحقاق" : "ربع سنوي" },
                 { k: "الدفعات المتبقية", v: String(inv.remainingPayments) },
               ].map((r) => (
                 <div
@@ -162,10 +170,9 @@ export default function SellOrderPage() {
               onChange={(e) => {
                 const v = Number(e.target.value);
                 setPortion(v);
-                const newFace = Math.round((inv.principal * v) / 100);
-                const ratio = price / face || 0.97;
-                const next = Math.round(newFace * ratio);
-                const clamped = Math.max(Math.round(newFace * 0.85), Math.min(newFace, next));
+                const next = suggestPrice(inv, v);
+                const ratio = price / suggestedPrice || 1;
+                const clamped = Math.max(next.minPrice, Math.min(next.maxPrice, Math.round(next.price * ratio)));
                 setPrice(clamped);
                 setPriceText(fmt(clamped));
               }}
@@ -182,8 +189,65 @@ export default function SellOrderPage() {
           <Panel className="animate-fade-up p-6">
             <h2 className="text-[16px] font-bold text-white">سعر العرض</h2>
             <p className="mt-1 text-[12.5px] text-mute-400">
-              السعر الذي ترغب في التخارج به اليوم. كلما زاد الخصم، زادت سرعة البيع.
+              اقترحنا لك سعرًا مبدئيًا بناءً على الدفعات المتبقية والمخاطر. يمكنك خفضه أو رفعه.
             </p>
+
+            <div className="mt-5 rounded-2xl border border-brand-500/25 bg-brand-500/[0.06] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[12px] text-mute-400">السعر المقترح</p>
+                  <p className="mt-1 text-[20px] font-extrabold tracking-tight text-white">
+                    <span className="num">{money(suggestedPrice)}</span>
+                  </p>
+                </div>
+                <div className="text-left">
+                  <p className="text-[12px] text-mute-400">عائد المشتري عنده</p>
+                  <p className="num mt-1 text-[16px] font-bold text-brand-300">{pct(suggestion!.requiredYield)}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBasis((v) => !v)}
+                className="mt-3 text-[12px] font-semibold text-brand-300 hover:text-brand-200"
+              >
+                {showBasis ? "إخفاء طريقة الحساب" : "كيف حُسب هذا السعر؟"}
+              </button>
+              {showBasis && (
+                <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3 text-[12px]">
+                  {suggestion!.components.map((c) => (
+                    <div key={c.label} className="flex justify-between text-mute-300">
+                      <span>{c.label}</span>
+                      <span className="num">+{pct(c.value)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-bold text-white">
+                    <span>العائد المطلوب من المشتري</span>
+                    <span className="num">{pct(suggestion!.requiredYield)}</span>
+                  </div>
+                  <p className="pt-1.5 leading-relaxed text-mute-500">
+                    السعر المقترح هو القيمة الحالية للدفعات المتبقية (
+                    {suggestion!.cashflows.length === 1 ? (
+                      "دفعة واحدة"
+                    ) : (
+                      <>
+                        <span className="num">{suggestion!.cashflows.length}</span> دفعات
+                      </>
+                    )}{" "}
+                    بمجموع{" "}
+                    <span className="num">
+                      {money(Math.round(suggestion!.cashflows.reduce((s, c) => s + c.amount, 0)))}
+                    </span>
+                    ) مخصومة بهذا العائد. السعر استرشادي وليس تقييمًا أو توصية.
+                  </p>
+                  {inv.payout === "maturity" && (
+                    <p className="leading-relaxed text-mute-500">
+                      العائد المعلن <span className="num">{pct(inv.expectedReturn)}</span> عائد بسيط يُصرف
+                      كاملًا عند الاستحقاق، ويعادل <span className="num">{pct(suggestion!.components[0].value)}</span>{" "}
+                      سنويًا بعد احتساب التوقيت. لذلك يُبنى السعر على العائد الفعلي.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-white/[0.09] bg-[#0A0D0F] px-4 py-3.5 transition focus-within:border-brand-500/60 focus-within:ring-2 focus-within:ring-brand-500/15">
               <input
@@ -205,7 +269,7 @@ export default function SellOrderPage() {
               type="range"
               min={minPrice}
               max={maxPrice}
-              step={50}
+              step={1}
               value={price}
               aria-label="شريط سعر العرض"
               onChange={(e) => setPriceSafe(Number(e.target.value))}
@@ -222,8 +286,8 @@ export default function SellOrderPage() {
                 <Zap className="size-3.5" />
                 بيع أسرع
               </span>
-              <span dir="rtl" className="text-mute-500">
-                <span className="num">{speedPct.toFixed(0)}%</span> نحو سرعة البيع
+              <span dir="rtl" className={cn("rounded-full border px-2.5 py-1 font-semibold", zoneInfo.cls)}>
+                {zoneInfo.label}
               </span>
               <span className="inline-flex items-center gap-1.5 font-semibold text-brand-300">
                 سعر أعلى
@@ -232,8 +296,8 @@ export default function SellOrderPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {[0, 2, 3, 5, 8].map((d) => {
-                const target = Math.round(face * (1 - d / 100));
+              {[-5, -2, 0, 2].map((d) => {
+                const target = Math.max(minPrice, Math.min(maxPrice, Math.round(suggestedPrice * (1 + d / 100))));
                 const active = price === target;
                 return (
                   <button
@@ -246,7 +310,7 @@ export default function SellOrderPage() {
                         : "border-white/[0.08] bg-white/[0.02] text-mute-300 hover:border-white/20 hover:text-white",
                     )}
                   >
-                    خصم <span className="num">{d}%</span>
+                    {d === 0 ? "المقترح" : <span className="num">{d > 0 ? `+${d}` : d}%</span>}
                   </button>
                 );
               })}
@@ -259,13 +323,36 @@ export default function SellOrderPage() {
             <div className="space-y-0.5">
               {[
                 {
-                  k: "الخصم عن القيمة الاسمية",
-                  v: <span className="num text-teal-400">{pct(derived!.disc)}</span>,
+                  k: "مقارنة بالسعر المقترح",
+                  v: (
+                    <span className="num">
+                      {derived!.vsSuggested > 0 ? "+" : ""}
+                      {pct(derived!.vsSuggested)}
+                    </span>
+                  ),
                 },
+                {
+                  k: "الخصم عن القيمة الدفترية",
+                  v: <span className="num text-teal-400">{pct(derived!.disc)}</span>,
+                  hint: `القيمة الدفترية ${money(derived!.book)} = الأصل + الربح المستحق الذي لم يُصرف بعد.`,
+                },
+                ...(inv.payout === "maturity"
+                  ? [
+                      {
+                        k: "ربحك من الاستثمار",
+                        v: (
+                          <span className={cn("num", price >= face ? "text-teal-400" : "text-rose-300")}>
+                            {money(price - face)}
+                          </span>
+                        ),
+                        hint: "الفرق بين سعر البيع والمبلغ الذي استثمرته في الحصة المعروضة.",
+                      },
+                    ]
+                  : []),
                 {
                   k: "العائد التقديري للمشتري",
                   v: <span className="num text-brand-300">{pct(derived!.buyerReturn)}</span>,
-                  hint: "تقدير تجريبي = العائد الأصلي + أثر الخصم موزّعًا على المدة المتبقية.",
+                  hint: "العائد السنوي حتى الاستحقاق للمشتري عند هذا السعر، محسوبًا من الدفعات المتبقية.",
                 },
                 {
                   k: "المبلغ الذي ستحصل عليه",

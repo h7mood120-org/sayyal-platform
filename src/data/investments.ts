@@ -32,6 +32,24 @@ function buildDistributions(
   return out;
 }
 
+/** صك يُصرف أصله وربحه دفعة واحدة عند الاستحقاق (ربح بسيط) */
+function buildMaturityPayout(
+  id: string,
+  principal: number,
+  rate: number,
+  totalMonths: number,
+  dateLabel: string,
+): Distribution[] {
+  return [
+    {
+      id: `${id}-d1`,
+      date: dateLabel,
+      amount: Math.round(principal * (1 + (rate / 100) * (totalMonths / 12))),
+      status: "due",
+    },
+  ];
+}
+
 export const seedInvestments: Investment[] = [
   {
     id: "inv-001",
@@ -211,6 +229,29 @@ export const seedInvestments: Investment[] = [
     lockedReason: "مرهون مقابل تسهيل قائم",
     acquiredVia: "platform",
     acquiredAt: "27 يناير 2026",
+  },
+  {
+    id: "inv-009",
+    issuer: "شركة رواسي للصناعات",
+    issuerSub: "تمويل توسعة مصنع — العائد يُصرف عند الاستحقاق",
+    platform: "sukuk",
+    assetType: "sukuk",
+    principal: 10000,
+    expectedReturn: 11.2,
+    maturityDate: "2028-04-01",
+    maturityLabel: "1 أبريل 2028",
+    remainingMonths: 18,
+    totalMonths: 36,
+    risk: "medium",
+    status: "active",
+    ownerId: "mohammed",
+    recovered: 0,
+    remainingPayments: 1,
+    payout: "maturity",
+    distributions: buildMaturityPayout("inv-009", 10000, 11.2, 36, "أبريل 2028"),
+    sellable: true,
+    acquiredVia: "platform",
+    acquiredAt: "1 أبريل 2025",
   },
 
   /* ————— محفظة سارة ————— */

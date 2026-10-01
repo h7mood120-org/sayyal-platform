@@ -53,6 +53,8 @@ export interface Investment {
   ownerId: PersonaId;
   recovered: number;
   remainingPayments: number;
+  /** نمط صرف العائد: دوري (ربع سنوي) أو دفعة واحدة عند الاستحقاق. الافتراضي دوري */
+  payout?: "periodic" | "maturity";
   distributions: Distribution[];
   lockedReason?: string;
   sellable: boolean;
@@ -70,6 +72,8 @@ export interface Listing {
   platform: PlatformId;
   assetType: AssetType;
   faceValue: number;
+  /** الأصل + الربح المستحق غير المصروف؛ الخصم يُحسب منها. غيابها يعني مساواتها للقيمة الاسمية */
+  bookValue?: number;
   askingPrice: number;
   sellPortion: number;
   discount: number;
