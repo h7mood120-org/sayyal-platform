@@ -358,7 +358,7 @@ interface Ctx extends State {
 }
 
 const StoreContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "sayyal-demo-v3";
+const STORAGE_KEY = "sayyal-demo-v4";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
