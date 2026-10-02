@@ -195,7 +195,7 @@ r.on ? "right-[3px]" : "right-[19px]"
 <div className="flex items-start gap-2.5">
 <Info className="mt-0.5 size-4 shrink-0 text-mute-400" />
 <p className="text-[11.5px] leading-relaxed text-mute-400">
-نموذج تجريبي لأغراض VentureX — لا تمثل المنصات الظاهرة شراكات فعلية مع سيّال. لا يوجد
+لا يوجد
 تسجيل دخول حقيقي ولا ربط بنكي فعلي، وجميع البيانات تجريبية.
 </p>
 </div>

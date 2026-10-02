@@ -140,9 +140,6 @@ className="btn-quiet w-full justify-start gap-2 px-3 py-2 text-[12.5px]"
 <RotateCcw className="size-4" />
 إعادة ضبط العرض التجريبي
 </button>
-<p className="px-1 text-[10px] leading-relaxed text-mute-500">
-نموذج تجريبي لأغراض VentureX — لا تمثل المنصات الظاهرة شراكات فعلية مع سيّال.
-</p>
 </div>
 </aside>
 {mobileNav && (
@@ -197,7 +194,7 @@ style={{ background: me.accent }}
 <footer className="border-t border-line px-4 py-5 sm:px-6">
 <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3">
 <p className="text-[11px] leading-relaxed text-mute-500">
-نموذج تجريبي لأغراض VentureX — لا تمثل المنصات الظاهرة شراكات فعلية مع سيّال. جميع
+جميع
 البيانات والأسماء والأرقام المعروضة تجريبية بالكامل.
 </p>
 <Link href="/summary" className="btn-quiet gap-1.5 px-2.5 py-1.5 text-[12px]">

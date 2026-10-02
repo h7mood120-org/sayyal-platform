@@ -177,7 +177,7 @@ style={{ background: buyer.accent }}
 </div>
 </div>
 <p className="mx-auto mt-6 max-w-lg text-[10.5px] leading-relaxed text-mute-500">
-نموذج تجريبي لأغراض VentureX — لا تمثل المنصات الظاهرة شراكات فعلية مع سيّال. سيّال طبقة
+سيّال طبقة
 تقنية وسوق ثانوي تتكامل مع الجهات المرخصة، ولا تحتفظ بالأصل ولا تنقل الملكية بنفسها.
 </p>
 </div>
