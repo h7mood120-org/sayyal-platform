@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Layers, CheckCircle2, Percent, Store } from "lucide-react";
+import { Layers, Percent, Store } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Panel, SectionTitle, Skeleton, useBriefLoading, EmptyState, AnimatedNumber, Pill } from "@/components/ui";
 import { InvestmentCard } from "@/components/cards";
@@ -21,10 +21,9 @@ const active = useMemo(() => myInvestments.filter((i) => i.status !== "exited"),
 const exited = useMemo(() => myInvestments.filter((i) => i.status === "exited"), [myInvestments]);
 const totals = useMemo(() => {
 const total = active.reduce((s, i) => s + i.principal, 0);
-const recovered = myInvestments.reduce((s, i) => s + i.recovered, 0);
 const weighted = total > 0 ? active.reduce((s, i) => s + i.principal * i.expectedReturn, 0) / total : 0;
-return { total, recovered, weighted };
-}, [active, myInvestments]);
+return { total, weighted };
+}, [active]);
 const shown = useMemo(() => {
 if (filter === "all") return myInvestments;
 return myInvestments.filter((i) => i.status === filter);
@@ -43,13 +42,12 @@ return (
 سوق سيّال
 </Link>
 </div>
-<div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+<div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
 {loading
-? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[118px]" />)
+? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-[118px]" />)
 : [
 { k: "قيمة المراكز النشطة", v: totals.total, suffix: SAR, icon: <Layers className="size-[17px]" /> },
 { k: "العائد المرجّح", v: totals.weighted, suffix: "%", decimals: 1, icon: <Percent className="size-[17px]" /> },
-{ k: "إجمالي المسترد", v: totals.recovered, suffix: SAR, icon: <CheckCircle2 className="size-[17px]" /> },
 ].map((s, i) => (
 <Panel key={s.k} hover className="p-5">
 <div className="flex items-start justify-between">
