@@ -17,7 +17,6 @@ id: PersonaId;
 nameAr: string;
 nameEn: string;
 initials: string;
-wallet: number;
 bankBalance: number;
 bankAccountId: string | null;
 memberSince: string;
@@ -75,7 +74,7 @@ status: "open" | "sold" | "cancelled";
 isNew?: boolean;
 buyerId?: PersonaId;
 }
-export type TxKind = "list" | "buy" | "sell" | "settlement" | "funding" | "distribution";
+export type TxKind = "list" | "buy" | "sell" | "settlement";
 export interface Transaction {
 id: string;
 kind: TxKind;

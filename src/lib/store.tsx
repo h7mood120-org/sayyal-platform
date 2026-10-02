@@ -191,23 +191,17 @@ function reducer(state: State, action: Action): State {
       const at = nowLabel();
       const ref = txId("SET");
 
-      /* المشتري: يُخصم من محفظة سيّال أولًا ثم من الحساب البنكي المرتبط */
-      const fromWallet = Math.min(buyer.wallet, price);
-      const fromBank = price - fromWallet;
+      /* المشتري: يُخصم المبلغ من الحساب البنكي المرتبط */
       const nextBuyer: User = {
         ...buyer,
-        wallet: buyer.wallet - fromWallet,
-        bankBalance: buyer.bankBalance - fromBank,
+        bankBalance: buyer.bankBalance - price,
       };
 
       const nextUsers = { ...state.users, [action.buyerId]: nextBuyer };
 
-      /* البائع: تُضاف حصيلة التخارج إلى محفظته */
       let sellerName = listing.sellerLabel;
       if (listing.sellerId !== "anon") {
-        const seller = state.users[listing.sellerId];
-        sellerName = seller.nameAr;
-        nextUsers[listing.sellerId] = { ...seller, wallet: seller.wallet + price };
+        sellerName = state.users[listing.sellerId].nameAr;
       }
 
       /* نقل الأصل */
@@ -305,7 +299,7 @@ function reducer(state: State, action: Action): State {
         notes.unshift({
           id: `n-${Math.random().toString(36).slice(2, 7)}`,
           titleAr: "تم بيع عرضك",
-          bodyAr: `تمت تسوية ${price.toLocaleString("en-US")} ر.س في محفظتك.`,
+          bodyAr: `تمت تسوية ${price.toLocaleString("en-US")} ر.س عبر الجهة المرخصة.`,
           at: "الآن",
           userId: listing.sellerId as PersonaId,
           read: false,
@@ -364,7 +358,7 @@ interface Ctx extends State {
 }
 
 const StoreContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "sayyal-demo-v2";
+const STORAGE_KEY = "sayyal-demo-v3";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-Building2, Check, Loader2, Lock, ShieldCheck, Wallet, ArrowUpRight, CheckCircle2, CreditCard,
+Building2, Check, Loader2, ShieldCheck, ArrowUpRight, CheckCircle2, CreditCard,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Modal, AnimatedNumber } from "@/components/ui";
@@ -35,7 +35,7 @@ open: boolean;
 onClose: () => void;
 }) {
 const router = useRouter();
-const { me, dispatch, toast, persona } = useStore();
+const { dispatch, toast, persona } = useStore();
 const [stage, setStage] = useState<Stage>("method");
 const [bankId, setBankId] = useState<string | null>(null);
 const [verifyStep, setVerifyStep] = useState(-1);
@@ -43,9 +43,7 @@ const [settleStep, setSettleStep] = useState(-1);
 const [ref] = useState(() => txId("SET"));
 const price = listing.askingPrice;
 const bank = bankAccounts.find((b) => b.id === bankId) ?? null;
-const fromWallet = Math.min(me.wallet, price);
-const fromBank = price - fromWallet;
-const enough = bank ? bank.available >= fromBank : me.wallet >= price;
+const enough = bank ? bank.available >= price : false;
 useEffect(() => {
 if (!open) {
 setStage("method");
@@ -109,31 +107,6 @@ className={cn(stage === "settling" || stage === "done" ? "max-w-xl" : "max-w-lg"
 <p className="mt-1.5 text-[13px] text-mute-400">
 شراء {listing.issuer} بمبلغ <span className="num font-semibold text-ink">{money(price)}</span>
 </p>
-<div className="mt-5 rounded-2xl border border-line bg-canvas p-4">
-<div className="flex items-center justify-between">
-<div className="flex items-center gap-3">
-<span className="grid size-9 place-items-center rounded-xl border border-brand-200 bg-brand-50 text-brand-700">
-<Wallet className="size-[18px]" />
-</span>
-<div>
-<p className="text-[13.5px] font-semibold text-ink">رصيد سيّال</p>
-<p className="text-[11.5px] text-mute-400">متاح للاستخدام فورًا</p>
-</div>
-</div>
-<p className="text-[16px] font-bold text-ink">
-<span className="num">{money(me.wallet)}</span>
-</p>
-</div>
-{fromBank > 0 && (
-<div className="mt-3 flex items-center gap-2 rounded-xl border border-[#F5D48A] bg-[#FFF6E5] px-3 py-2">
-<Lock className="size-3.5 shrink-0 text-warn" />
-<p className="text-[11.5px] leading-relaxed text-warn">
-الرصيد لا يغطي المبلغ. يلزم تمويل{" "}
-<span className="num font-bold">{money(fromBank)}</span> من حساب بنكي مرتبط.
-</p>
-</div>
-)}
-</div>
 <p className="mb-2.5 mt-5 text-[13px] font-semibold text-ink">ربط حساب بنكي</p>
 <div className="grid grid-cols-2 gap-2.5">
 {bankAccounts.map((b) => {
@@ -220,13 +193,9 @@ reached
 )}
 {stage === "verified" && (
 <div className="mt-5 space-y-1 rounded-2xl border border-line bg-canvas p-4">
-<div className="flex items-center justify-between py-1.5">
-<span className="text-[12.5px] text-mute-400">من محفظة سيّال</span>
-<span className="num text-[13px] font-bold text-ink">{money(fromWallet)}</span>
-</div>
 <div className="flex items-center justify-between border-b border-line py-1.5">
 <span className="text-[12.5px] text-mute-400">من {bank?.nameAr}</span>
-<span className="num text-[13px] font-bold text-ink">{money(fromBank)}</span>
+<span className="num text-[13px] font-bold text-ink">{money(price)}</span>
 </div>
 <div className="flex items-center justify-between pt-2.5">
 <span className="text-[13px] font-semibold text-ink">إجمالي التسوية</span>

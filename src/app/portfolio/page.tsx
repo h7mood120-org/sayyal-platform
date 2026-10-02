@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Wallet, Layers, CheckCircle2, Percent, Store } from "lucide-react";
+import { Layers, CheckCircle2, Percent, Store } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Panel, SectionTitle, Skeleton, useBriefLoading, EmptyState, AnimatedNumber, Pill } from "@/components/ui";
 import { InvestmentCard } from "@/components/cards";
@@ -14,7 +14,7 @@ const FILTERS = [
 { id: "exited", label: "تم التخارج" },
 ] as const;
 export default function PortfolioPage() {
-const { me, myInvestments, ready } = useStore();
+const { myInvestments, ready } = useStore();
 const loading = useBriefLoading(380) || !ready;
 const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
 const active = useMemo(() => myInvestments.filter((i) => i.status !== "exited"), [myInvestments]);
@@ -43,11 +43,10 @@ return (
 سوق سيّال
 </Link>
 </div>
-<div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+<div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
 {loading
-? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[118px]" />)
+? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[118px]" />)
 : [
-{ k: "رصيد محفظة سيّال", v: me.wallet, suffix: SAR, accent: true, icon: <Wallet className="size-[17px]" /> },
 { k: "قيمة المراكز النشطة", v: totals.total, suffix: SAR, icon: <Layers className="size-[17px]" /> },
 { k: "العائد المرجّح", v: totals.weighted, suffix: "%", decimals: 1, icon: <Percent className="size-[17px]" /> },
 { k: "إجمالي المسترد", v: totals.recovered, suffix: SAR, icon: <CheckCircle2 className="size-[17px]" /> },
@@ -56,21 +55,13 @@ return (
 <div className="flex items-start justify-between">
 <p className="label">{s.k}</p>
 <span
-className={cn(
-"grid size-8 place-items-center rounded-xl border",
-s.accent
-? "border-brand-200 bg-brand-50 text-brand-700"
-: "border-line bg-canvas text-mute-300",
-)}
+className="grid size-8 place-items-center rounded-xl border border-line bg-canvas text-mute-300"
 >
 {s.icon}
 </span>
 </div>
 <p
-className={cn(
-"mt-3 text-[20px] font-bold leading-none sm:text-[26px]",
-s.accent ? "text-brand-700" : "text-ink",
-)}
+className="mt-3 text-[20px] font-bold leading-none text-ink sm:text-[26px]"
 >
 <AnimatedNumber value={s.v} decimals={s.decimals ?? 0} />
 <span className="mr-1.5 text-[13px] font-semibold text-mute-400">{s.suffix}</span>

@@ -38,9 +38,8 @@ style={{ background: me.accent }}
 </div>
 </div>
 </div>
-<div className="mt-6 grid gap-3 sm:grid-cols-3">
+<div className="mt-6 grid gap-3 sm:grid-cols-2">
 {[
-{ k: "رصيد المحفظة", v: money(me.wallet) },
 { k: "عدد المراكز", v: String(myInvestments.filter((i) => i.status !== "exited").length) },
 { k: "عدد العمليات", v: String(myTx.length) },
 ].map((s) => (

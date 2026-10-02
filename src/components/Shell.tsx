@@ -9,7 +9,6 @@ Bell, Check, RotateCcw, ChevronLeft, Info, Menu, X,
 import { useStore } from "@/lib/store";
 import { SayyalLogo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
-import { money } from "@/lib/format";
 import { Modal } from "@/components/ui";
 const NAV = [
 { href: "/", label: "الرئيسية", icon: LayoutGrid },
@@ -124,15 +123,6 @@ return (
 </Link>
 {nav}
 <div className="mt-auto space-y-3">
-<div className="rounded-xl border border-line bg-canvas p-3.5">
-<p className="text-[11px] text-mute-400">رصيد محفظة سيّال</p>
-<p className="mt-1 text-[19px] font-bold text-ink">
-<span className="num">{money(me.wallet)}</span>
-</p>
-<p className="mt-2 text-[11px] leading-relaxed text-mute-400">
-السيولة عندما تحتاجها.
-</p>
-</div>
 <button
 onClick={() => setConfirmReset(true)}
 className="btn-quiet w-full justify-start gap-2 px-3 py-2 text-[12.5px]"

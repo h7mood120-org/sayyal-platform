@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-ShieldAlert, TrendingUp, Clock3, CalendarDays, Receipt, Info, ShieldCheck,
+ShieldAlert, TrendingUp, CalendarDays, Receipt, Info, ShieldCheck,
 FileCheck2, Wallet, ArrowLeftRight, Landmark, PackageCheck, User2, ArrowUpRight,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -57,7 +57,7 @@ className="w-full rounded-t-[3px] bg-brand-500 transition-colors group-hover/b:b
 }
 export default function OpportunityPage() {
 const { id } = useParams<{ id: string }>();
-const { listings, persona, me, toast } = useStore();
+const { listings, persona, toast } = useStore();
 const [buyOpen, setBuyOpen] = useState(false);
 const listing = listings.find((l) => l.id === id);
 const totals = useMemo(() => {
@@ -225,13 +225,6 @@ className="flex items-start gap-3 rounded-2xl border border-line bg-canvas p-4 t
 {listing.remainingMonths} شهر
 </p>
 </div>
-</div>
-<div className="relative mt-4 flex items-center justify-between rounded-xl border border-line bg-canvas px-3.5 py-2.5">
-<span className="inline-flex items-center gap-1.5 text-[12px] text-mute-400">
-<Clock3 className="size-3.5" />
-رصيد محفظتك
-</span>
-<span className="num text-[13px] font-bold text-ink">{money(me.wallet)}</span>
 </div>
 {sold ? (
 <div className="relative mt-5 rounded-xl border border-line bg-canvas px-4 py-3.5 text-center text-[13px] font-semibold text-mute-300">

@@ -12,16 +12,12 @@ list: "عرض تخارج",
 buy: "شراء",
 sell: "تخارج",
 settlement: "تسوية",
-funding: "تمويل محفظة",
-distribution: "توزيعة",
 };
 const FILTERS: { id: "all" | TxKind; label: string }[] = [
 { id: "all", label: "الكل" },
-{ id: "distribution", label: "التوزيعات" },
 { id: "buy", label: "المشتريات" },
 { id: "sell", label: "التخارجات" },
 { id: "list", label: "العروض" },
-{ id: "funding", label: "التمويل" },
 ];
 export default function TransactionsPage() {
 const { transactions, persona, ready } = useStore();
@@ -50,7 +46,7 @@ return (
 <div className="space-y-8">
 <div className="">
 <h1 className="text-[28px] font-bold text-ink sm:text-[32px]">المعاملات</h1>
-<p className="mt-2 text-[14.5px] text-mute-300">سجل كامل لحركة محفظتك داخل سيّال.</p>
+<p className="mt-2 text-[14.5px] text-mute-300">سجل كامل لعملياتك داخل سيّال.</p>
 </div>
 <div className="grid gap-4 sm:grid-cols-3">
 {[
@@ -113,7 +109,7 @@ filter === f.id
 <EmptyState
 icon={<Receipt className="size-5" />}
 title="لا توجد معاملات"
-body="ستظهر هنا التوزيعات وعمليات البيع والشراء والتسوية."
+body="ستظهر هنا عمليات البيع والشراء والتسوية."
 />
 ) : (
 <Panel className="divide-y divide-line overflow-hidden">
