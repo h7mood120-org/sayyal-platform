@@ -310,9 +310,6 @@ action={<button onClick={clearAll} className="btn-ghost px-4 py-2.5">مسح ال
 </div>
 )}
 </section>
-<p className="pt-2 text-center text-[11px] text-mute-500">
-جميع الفرص والأسماء والأرقام المعروضة بيانات تجريبية داخل نموذج VentureX.
-</p>
 </div>
 );
 }
