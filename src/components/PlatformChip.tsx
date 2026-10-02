@@ -1,90 +1,117 @@
 "use client";
-
 import React from "react";
 import { platforms } from "@/data/platforms";
 import type { PlatformId } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-/**
- * بطاقة نصية أنيقة تمثل "المنصة الأصلية للاستثمار".
- * الشعارات الرسمية غير متوفرة داخل النموذج التجريبي، لذلك تُستخدم هذه البطاقة كعنصر نائب
- * ولا يُدّعى أنها الشعار الرسمي لأي منصة.
- */
 export function PlatformMark({
-  id,
-  size = 28,
-  className,
+id,
+size = 28,
+className,
 }: {
-  id: PlatformId;
-  size?: number;
-  className?: string;
+id: PlatformId;
+size?: number;
+className?: string;
 }) {
-  const p = platforms[id];
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        background: `linear-gradient(145deg, ${p.accent}22, ${p.accent}0A)`,
-        borderColor: `${p.accent}38`,
-        color: p.accent,
-        fontSize: size * 0.46,
-      }}
-      className={cn(
-        "grid shrink-0 place-items-center rounded-[9px] border font-bold leading-none",
-        className,
-      )}
-    >
-      {p.monogram}
-    </span>
-  );
+const p = platforms[id];
+const wide = id === "sukuk";
+return (
+<span
+style={{ width: size, height: size, padding: wide ? size * 0.08 : size * 0.16 }}
+className={cn(
+"grid shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-white",
+className,
+)}
+>
+<img src={p.mark} alt={p.nameAr} className="max-h-full max-w-full object-contain" draggable={false} />
+</span>
+);
 }
-
+export function PlatformLogo({
+id,
+height = 28,
+className,
+}: {
+id: PlatformId;
+height?: number;
+className?: string;
+}) {
+const p = platforms[id];
+return (
+<img
+src={p.logo}
+alt={`${p.nameAr} — ${p.nameEn}`}
+style={{ height }}
+className={cn("w-auto shrink-0 object-contain", className)}
+draggable={false}
+/>
+);
+}
 export function PlatformChip({
-  id,
-  size = "md",
-  showLabel = true,
-  className,
+id,
+size = "md",
+showLabel = true,
+className,
 }: {
-  id: PlatformId;
-  size?: "sm" | "md";
-  showLabel?: boolean;
-  className?: string;
+id: PlatformId;
+size?: "sm" | "md";
+showLabel?: boolean;
+className?: string;
 }) {
-  const p = platforms[id];
-  const mark = size === "sm" ? 18 : 22;
-  return (
-    <span
-      title={`${p.nameAr} — ${p.descriptorAr} (عنصر نائب تجريبي، ليس الشعار الرسمي)`}
-      style={{ borderColor: `${p.accent}2E`, background: `${p.accent}0E` }}
-      className={cn(
-        "inline-flex items-center gap-2 rounded-[10px] border py-1 pl-2.5 pr-1.5",
-        className,
-      )}
-    >
-      <PlatformMark id={id} size={mark} />
-      {showLabel && (
-        <span
-          style={{ color: p.accent }}
-          className={cn("font-semibold leading-none", size === "sm" ? "text-[11.5px]" : "text-[12.5px]")}
-        >
-          {p.nameAr}
-        </span>
-      )}
-    </span>
-  );
+const p = platforms[id];
+const mark = size === "sm" ? 22 : 26;
+if (!showLabel) {
+return (
+<span title={`${p.nameAr} — ${p.descriptorAr}`} className={className}>
+<PlatformMark id={id} size={size === "sm" ? 34 : 38} />
+</span>
+);
 }
-
+if (id === "sukuk") {
+return (
+<span
+title={`${p.nameAr} — ${p.descriptorAr}`}
+style={{ height: mark + 8 }}
+className={cn(
+"inline-flex shrink-0 items-center rounded-lg border border-line bg-white px-2.5",
+className,
+)}
+>
+<img src={p.mark} alt={p.nameAr} style={{ height: size === "sm" ? 13 : 15 }} className="w-auto" draggable={false} />
+</span>
+);
+}
+return (
+<span
+title={`${p.nameAr} — ${p.descriptorAr}`}
+style={{ height: mark + 8 }}
+className={cn(
+"inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-white pl-2.5 pr-[3px]",
+className,
+)}
+>
+<PlatformMark id={id} size={mark} className="border-0" />
+<span
+className={cn(
+"font-semibold leading-none text-mute-100",
+size === "sm" ? "text-[11.5px]" : "text-[12.5px]",
+)}
+>
+{p.nameAr}
+</span>
+</span>
+);
+}
 export function PlatformOriginLine({ id }: { id: PlatformId }) {
-  const p = platforms[id];
-  return (
-    <div className="flex items-center gap-2.5">
-      <PlatformMark id={id} size={34} />
-      <div className="leading-tight">
-        <p className="text-[10.5px] text-mute-400">منصة الإصدار</p>
-        <p className="text-[13.5px] font-semibold text-white">{p.nameAr}</p>
-      </div>
-    </div>
-  );
+const p = platforms[id];
+return (
+<div className="flex items-center gap-3">
+<span className="grid h-11 shrink-0 place-items-center rounded-lg border border-line bg-white px-2.5">
+<PlatformLogo id={id} height={id === "jiad" ? 24 : 26} />
+</span>
+<div className="leading-tight">
+<p className="text-[11px] text-mute-400">منصة الإصدار</p>
+<p className="mt-0.5 text-[13.5px] font-semibold text-ink">{p.nameAr}</p>
+</div>
+</div>
+);
 }
