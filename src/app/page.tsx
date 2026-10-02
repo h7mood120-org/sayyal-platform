@@ -52,7 +52,7 @@ accent ? "text-brand-700" : "text-ink",
 );
 }
 export default function DashboardPage() {
-const { me, persona, myInvestments, openListings, ready } = useStore();
+const { me, myInvestments, openListings, ready } = useStore();
 const loading = useBriefLoading(380) || !ready;
 const active = useMemo(
 () => myInvestments.filter((i) => i.status !== "exited"),
@@ -181,9 +181,7 @@ style={{ width: `${share}%`, background: p.accent }}
 استثمر طويلًا، دون أن تفقد مرونتك.
 </h3>
 <p className="mt-2.5 text-[13.5px] leading-relaxed text-white/70">
-{persona === "mohammed"
-? "اعرض أي مركز للتخارج قبل تاريخ الاستحقاق، وحدّد السعر الذي يناسبك."
-: "ادخل في فرص قائمة بالفعل، بدل انتظار الإصدار القادم."}
+اعرض أي مركز للتخارج قبل تاريخ الاستحقاق، وحدّد السعر الذي يناسبك.
 </p>
 <ol className="mt-5 space-y-3 border-t border-white/10 pt-5">
 {[
@@ -201,10 +199,10 @@ style={{ width: `${share}%`, background: p.accent }}
 </ol>
 <div className="mt-auto pt-6">
 <Link
-href={persona === "mohammed" ? "/portfolio" : "/market"}
+href="/portfolio"
 className="btn w-full bg-brand-500 py-3 text-white hover:bg-brand-600"
 >
-{persona === "mohammed" ? "اختر استثمارًا للتخارج" : "تصفّح سوق سيّال"}
+اختر استثمارًا للتخارج
 </Link>
 </div>
 </div>

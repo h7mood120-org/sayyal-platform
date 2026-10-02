@@ -14,7 +14,7 @@ const FILTERS = [
 { id: "exited", label: "تم التخارج" },
 ] as const;
 export default function PortfolioPage() {
-const { me, myInvestments, ready, persona } = useStore();
+const { me, myInvestments, ready } = useStore();
 const loading = useBriefLoading(380) || !ready;
 const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
 const active = useMemo(() => myInvestments.filter((i) => i.status !== "exited"), [myInvestments]);
@@ -35,9 +35,7 @@ return (
 <div>
 <h1 className="text-[28px] font-bold text-ink sm:text-[32px]">محفظتي</h1>
 <p className="mt-2 text-[14.5px] text-mute-300">
-{persona === "mohammed"
-? "استثماراتك لا يجب أن تتوقف حتى تاريخ الاستحقاق."
-: "مراكزك الاستثمارية — من المنصات ومن سوق سيّال."}
+استثماراتك لا يجب أن تتوقف حتى تاريخ الاستحقاق.
 </p>
 </div>
 <Link href="/market" className="btn-ghost px-4 py-2.5">

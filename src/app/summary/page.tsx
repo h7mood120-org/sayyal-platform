@@ -15,10 +15,10 @@ return (
 <EmptyState
 icon={<ArrowLeftRight className="size-5" />}
 title="لم تكتمل أي صفقة بعد"
-body="نفّذ رحلة العرض: اعرض استثمارًا للتخارج من حساب محمد، ثم انتقل إلى سارة واشترِ العرض من سوق سيّال."
+body="اعرض أحد استثماراتك للتخارج من محفظتك، أو اشترِ فرصة قائمة من سوق سيّال."
 action={
 <div className="flex flex-wrap justify-center gap-2.5">
-<Link href="/portfolio" className="btn-primary px-4 py-2.5">ابدأ من محفظة محمد</Link>
+<Link href="/portfolio" className="btn-primary px-4 py-2.5">ابدأ من محفظتك</Link>
 <Link href="/market" className="btn-ghost px-4 py-2.5">سوق سيّال</Link>
 </div>
 }
@@ -26,7 +26,10 @@ action={
 </div>
 );
 }
-const seller = users[lastDeal.sellerId];
+const sellerUser = lastDeal.sellerId !== "anon" ? users[lastDeal.sellerId] : undefined;
+const seller = sellerUser
+? { name: sellerUser.nameAr.split(" ")[0], initials: sellerUser.initials, accent: sellerUser.accent }
+: { name: lastDeal.sellerLabel ?? "مستثمر فرد", initials: "م", accent: "#64748B" };
 const buyer = users[lastDeal.buyerId];
 return (
 <div className="relative">
@@ -51,7 +54,7 @@ style={{ background: seller.accent }}
 </span>
 <div>
 <p className="text-[16px] font-bold text-ink">
-{seller.nameAr.split(" ")[0]}
+{seller.name}
 </p>
 <p className="text-[11.5px] text-mute-400">البائع</p>
 </div>
@@ -113,14 +116,14 @@ style={{ background: buyer.accent }}
 <p className="text-[16px] font-bold text-ink">
 {buyer.nameAr.split(" ")[0]}
 </p>
-<p className="text-[11.5px] text-mute-400">المشترية</p>
+<p className="text-[11.5px] text-mute-400">المشتري</p>
 </div>
 </div>
 <div className="relative mt-7">
-<p className="text-[12.5px] text-mute-400">حصلت على فرصة استثمارية قائمة</p>
+<p className="text-[12.5px] text-mute-400">حصل على فرصة استثمارية قائمة</p>
 <p className="mt-3 text-[19px] font-bold text-ink">{lastDeal.issuer}</p>
 <p className="mt-2 text-[12px] text-mute-400">
-دخلت بسعر <span className="num font-semibold text-ink">{money(lastDeal.price)}</span> على
+دخل بسعر <span className="num font-semibold text-ink">{money(lastDeal.price)}</span> على
 قيمة اسمية <span className="num font-semibold text-ink">{money(lastDeal.faceValue)}</span>
 </p>
 </div>

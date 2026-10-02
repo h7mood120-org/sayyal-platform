@@ -310,7 +310,7 @@ className="btn-primary w-full py-3"
 onClick={() => {
 toast({
 title: "عرضك منشور في السوق",
-body: "انتقل إلى حساب سارة لرؤيته من جانب المشتري.",
+body: "أصبح عرضك متاحًا للمستثمرين في سوق سيّال.",
 tone: "success",
 });
 router.push(newListingId ? `/market/${newListingId}` : "/market");

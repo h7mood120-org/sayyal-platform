@@ -1,7 +1,7 @@
 export type PlatformId = "sukuk" | "aseel" | "jiad";
 export type RiskLevel = "low" | "medium" | "high";
 export type AssetType = "sukuk" | "realestate" | "corporate";
-export type PersonaId = "mohammed" | "sara";
+export type PersonaId = "mohammed";
 export interface Platform {
 id: PlatformId;
 nameAr: string;
@@ -16,7 +16,6 @@ export interface User {
 id: PersonaId;
 nameAr: string;
 nameEn: string;
-roleAr: string;
 initials: string;
 wallet: number;
 bankBalance: number;

@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
-ShieldCheck, Landmark, BellRing, FileText, ChevronLeft, BadgeCheck, Info, RotateCcw,
+ShieldCheck, Landmark, BellRing, FileText, ChevronLeft, BadgeCheck, Info, RotateCcw, Link2, Loader2,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Panel, SectionTitle, Pill } from "@/components/ui";
@@ -11,7 +11,8 @@ import { money } from "@/lib/format";
 import { platformList } from "@/data/platforms";
 import { PlatformLogo } from "@/components/PlatformChip";
 export default function AccountPage() {
-const { me, persona, transactions, myInvestments } = useStore();
+const { me, persona, transactions, myInvestments, toast } = useStore();
+const [tarmeez, setTarmeez] = useState<"unlinked" | "linking" | "linked">("unlinked");
 const bank = bankAccounts.find((b) => b.id === me.bankAccountId);
 const myTx = transactions.filter((t) => t.userId === persona);
 return (
@@ -35,7 +36,6 @@ style={{ background: me.accent }}
 <h2 className="text-[20px] font-bold text-ink">{me.nameAr}</h2>
 <BadgeCheck className="size-4 text-brand-600" />
 </div>
-<p className="mt-1 text-[12.5px] text-mute-400">{me.roleAr}</p>
 </div>
 </div>
 <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -84,9 +84,39 @@ className="flex items-center justify-between rounded-xl border border-line bg-ca
 <p className="text-[11px] text-mute-400">{p.descriptorAr}</p>
 </div>
 </div>
-<Pill>عرض تجريبي</Pill>
+<Pill tone="brand">تم الربط</Pill>
 </div>
 ))}
+<div className="flex items-center justify-between rounded-xl border border-line bg-canvas px-4 py-3">
+<div className="flex items-center gap-3">
+<span className="grid h-10 w-[84px] shrink-0 place-items-center rounded-lg border border-line bg-white px-2"><img src="/platforms/tarmeez.png" alt="ترميز" className="size-7 rounded-md object-contain" draggable={false} /></span>
+<div>
+<p className="text-[13.5px] font-semibold text-ink">ترميز</p>
+<p className="text-[11px] text-mute-400">منصة استثمار رقمية</p>
+</div>
+</div>
+{tarmeez === "linked" ? (
+<Pill tone="brand">تم الربط</Pill>
+) : (
+<div className="flex items-center gap-2">
+<Pill>غير مربوط</Pill>
+<button
+disabled={tarmeez === "linking"}
+onClick={() => {
+setTarmeez("linking");
+window.setTimeout(() => {
+setTarmeez("linked");
+toast({ title: "تم ربط ترميز", body: "أصبحت منصة ترميز مرتبطة بحسابك في سيّال.", tone: "success" });
+}, 1200);
+}}
+className="btn-ghost gap-1.5 px-3 py-1.5 text-[12px] disabled:opacity-70"
+>
+{tarmeez === "linking" ? <Loader2 className="size-3.5 animate-spin" /> : <Link2 className="size-3.5" />}
+{tarmeez === "linking" ? "جارٍ الربط…" : "ربط"}
+</button>
+</div>
+)}
+</div>
 </div>
 <p className="mt-4 border-t border-line pt-3.5 text-[11px] leading-relaxed text-mute-500">
 أسماء المنصات مستخدمة كأمثلة توضيحية داخل النموذج التجريبي فقط. لا يوجد تكامل فعلي ولا

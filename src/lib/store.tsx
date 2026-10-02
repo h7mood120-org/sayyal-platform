@@ -49,7 +49,8 @@ interface State {
     discount: number;
     buyerReturn: number;
     remainingMonths: number;
-    sellerId: PersonaId;
+    sellerId: PersonaId | "anon";
+    sellerLabel: string;
     buyerId: PersonaId;
     txRef: string;
     at: string;
@@ -68,7 +69,6 @@ const initialState: State = {
 };
 
 type Action =
-  | { type: "SET_PERSONA"; persona: PersonaId }
   | { type: "CREATE_LISTING"; investmentId: string; askingPrice: number; portion: number }
   | { type: "CANCEL_LISTING"; listingId: string }
   | { type: "LINK_BANK"; userId: PersonaId; bankAccountId: string; available: number }
@@ -82,13 +82,10 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "HYDRATE":
-      return { ...action.state, toasts: [] };
+      return { ...action.state, persona: initialState.persona, toasts: [] };
 
     case "RESET":
       return { ...JSON.parse(JSON.stringify(initialState)), persona: state.persona };
-
-    case "SET_PERSONA":
-      return { ...state, persona: action.persona };
 
     case "PUSH_TOAST":
       return { ...state, toasts: [...state.toasts, action.toast] };
@@ -167,18 +164,6 @@ function reducer(state: State, action: Action): State {
           i.id === inv.id ? { ...i, status: "listed" } : i,
         ),
         transactions: [tx, ...state.transactions],
-        notifications: [
-          {
-            id: `n-${Math.random().toString(36).slice(2, 7)}`,
-            titleAr: "فرصة جديدة في سوق سيّال",
-            bodyAr: `${inv.issuer} — متاحة الآن بسعر ${action.askingPrice.toLocaleString("en-US")} ر.س`,
-            at: "الآن",
-            userId: "sara",
-            read: false,
-            tone: "info",
-          },
-          ...state.notifications,
-        ],
       };
     }
 
@@ -352,7 +337,8 @@ function reducer(state: State, action: Action): State {
           discount: listing.discount,
           buyerReturn: listing.estimatedBuyerReturn,
           remainingMonths: listing.remainingMonths,
-          sellerId: (listing.sellerId === "anon" ? "mohammed" : listing.sellerId) as PersonaId,
+          sellerId: listing.sellerId,
+          sellerLabel: sellerName,
           buyerId: action.buyerId,
           txRef: ref,
           at,
@@ -370,7 +356,6 @@ function reducer(state: State, action: Action): State {
 interface Ctx extends State {
   me: User;
   dispatch: React.Dispatch<Action>;
-  setPersona: (p: PersonaId) => void;
   toast: (t: Omit<Toast, "id">) => void;
   reset: () => void;
   myInvestments: Investment[];
@@ -379,7 +364,7 @@ interface Ctx extends State {
 }
 
 const StoreContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "sayyal-demo-v1";
+const STORAGE_KEY = "sayyal-demo-v2";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -416,8 +401,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     window.setTimeout(() => dispatch({ type: "DISMISS_TOAST", id }), 4200);
   }, []);
 
-  const setPersona = useCallback((p: PersonaId) => dispatch({ type: "SET_PERSONA", persona: p }), []);
-
   const reset = useCallback(() => {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -433,14 +416,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...state,
       me,
       dispatch,
-      setPersona,
       toast,
       reset,
       ready,
       myInvestments: state.investments.filter((i) => i.ownerId === state.persona),
       openListings: state.listings.filter((l) => l.status === "open"),
     };
-  }, [state, setPersona, toast, reset, ready]);
+  }, [state, toast, reset, ready]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

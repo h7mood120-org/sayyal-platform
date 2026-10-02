@@ -240,8 +240,7 @@ className="flex items-start gap-3 rounded-2xl border border-line bg-canvas p-4 t
 ) : isMine ? (
 <div className="relative mt-5 space-y-2">
 <div className="rounded-xl border border-[#F5D48A] bg-[#FFF6E5] px-4 py-3 text-[12.5px] leading-relaxed text-warn">
-هذا عرضك أنت. انتقل إلى حساب <strong>سارة</strong> من مبدّل وضع العرض في الأعلى
-لتجربة الشراء.
+هذا عرضك أنت، وهو متاح الآن للمستثمرين في سوق سيّال.
 </div>
 <Link href="/orders" className="btn-ghost w-full py-3">
 إدارة أوامري

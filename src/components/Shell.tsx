@@ -11,8 +11,6 @@ import { SayyalLogo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { money } from "@/lib/format";
 import { Modal } from "@/components/ui";
-import { personaOrder } from "@/data/users";
-import type { PersonaId } from "@/lib/types";
 const NAV = [
 { href: "/", label: "الرئيسية", icon: LayoutGrid },
 { href: "/portfolio", label: "محفظتي", icon: Wallet },
@@ -21,38 +19,6 @@ const NAV = [
 { href: "/transactions", label: "المعاملات", icon: ArrowLeftRight },
 { href: "/account", label: "الحساب", icon: UserRound },
 ];
-function PersonaSwitcher() {
-const { persona, setPersona, users } = useStore();
-return (
-<div className="flex items-center gap-2">
-<span className="hidden text-[11.5px] font-medium text-mute-400 lg:inline">
-وضع العرض التجريبي
-</span>
-<div className="relative flex gap-0.5 rounded-xl border border-line bg-canvas p-[3px]">
-{personaOrder.map((p) => {
-const u = users[p];
-const active = persona === p;
-return (
-<button
-key={p}
-onClick={() => setPersona(p as PersonaId)}
-aria-pressed={active}
-className={cn(
-"relative z-10 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors",
-active
-? "bg-white text-ink shadow-[0_1px_2px_rgba(16,24,40,0.08)] ring-1 ring-line"
-: "text-mute-400 hover:text-ink",
-)}
->
-<span className="size-1.5 rounded-full" style={{ background: u.accent, opacity: active ? 1 : 0.45 }} />
-{p === "mohammed" ? "البائع: محمد" : "المشتري: سارة"}
-</button>
-);
-})}
-</div>
-</div>
-);
-}
 function NotificationBell() {
 const { notifications, persona, dispatch } = useStore();
 const [open, setOpen] = useState(false);
@@ -115,7 +81,7 @@ n.tone === "success" ? "bg-brand-50 text-brand-700" : "bg-ink/[0.05] text-mute-3
 }
 export function Shell({ children }: { children: React.ReactNode }) {
 const pathname = usePathname();
-const { me, persona, reset, toast } = useStore();
+const { me, reset, toast } = useStore();
 const [confirmReset, setConfirmReset] = useState(false);
 const [mobileNav, setMobileNav] = useState(false);
 const nav = (
@@ -164,7 +130,7 @@ return (
 <span className="num">{money(me.wallet)}</span>
 </p>
 <p className="mt-2 text-[11px] leading-relaxed text-mute-400">
-{persona === "mohammed" ? "السيولة عندما تحتاجها." : "جاهزة للاستثمار في فرصة قائمة."}
+السيولة عندما تحتاجها.
 </p>
 </div>
 <button
@@ -206,9 +172,6 @@ aria-label="القائمة"
 <div className="lg:hidden">
 <SayyalLogo compact />
 </div>
-<div className="hidden lg:block">
-<PersonaSwitcher />
-</div>
 <div className="mr-auto flex items-center gap-2.5">
 <span className="hidden items-center rounded-md border border-[#F5D48A] bg-[#FFF8E6] px-2 py-1 text-[11px] font-semibold text-[#8A5A00] sm:inline-flex">
 نسخة تجريبية
@@ -223,13 +186,9 @@ style={{ background: me.accent }}
 </span>
 <div className="hidden leading-tight sm:block">
 <p className="text-[12.5px] font-semibold text-ink">{me.nameAr}</p>
-<p className="text-[10.5px] text-mute-400">{me.roleAr}</p>
 </div>
 </div>
 </div>
-</div>
-<div className="border-t border-line px-4 py-2 lg:hidden">
-<PersonaSwitcher />
 </div>
 </header>
 <main className="mx-auto w-full max-w-[1320px] flex-1 px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
