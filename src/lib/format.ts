@@ -1,3 +1,5 @@
+import type { Investment } from "@/lib/types";
+
 export const SAR = "ر.س";
 
 export function fmt(n: number, decimals = 0): string {
@@ -98,6 +100,11 @@ export interface Valuation {
   termDays: number;
   elapsedDays: number;
   totalProfit: number;
+  /** الربح المستحق منذ تاريخ البدء */
+  grossAccruedProfit: number;
+  /** الأرباح التي وزّعتها منصة الإصدار سابقًا */
+  paidProfit: number;
+  /** الربح المستحق الذي لم يُوزَّع بعد */
   accruedProfit: number;
   /** القيمة في تاريخ التقييم */
   value: number;
@@ -107,6 +114,8 @@ export interface Valuation {
   upper: number;
   /** القيمة عند الاستحقاق */
   maturityValue: number;
+  /** ما يتبقى لحامل الوحدات حتى الاستحقاق (الأصل + الأرباح غير الموزعة) */
+  remainingPayout: number;
 }
 
 /**
@@ -115,7 +124,8 @@ export interface Valuation {
  * 2. الأيام المنقضية = تاريخ التقييم − تاريخ البدء
  * 3. إذا كان معدل الربح سنويًا: إجمالي الربح = الأصل × (المعدل ÷ 100) × (المدة الكلية ÷ 365)
  * 4. إذا كان المعدل يغطي كامل المدة: إجمالي الربح = الأصل × (المعدل ÷ 100)
- * 5. الربح المستحق = إجمالي الربح × (الأيام المنقضية ÷ المدة الكلية)
+ * 5. الربح المستحق = إجمالي الربح × (الأيام المنقضية ÷ المدة الكلية) − الأرباح الموزعة سابقًا
+ *    (ما وزّعته منصة الإصدار حصل عليه البائع بالفعل، فلا يُحتسب مرة أخرى في السعر)
  * 6. القيمة في تاريخ التقييم = الأصل + الربح المستحق
  * 7. الحد الأدنى = القيمة في تاريخ التقييم × 0.90
  * 8. الحد الأعلى = القيمة في تاريخ التقييم × 1.10
@@ -128,6 +138,7 @@ export function valuation(
   startDate: string,
   maturityDate: string,
   valuationDate: string = todayISO(),
+  paidProfit = 0,
 ): Valuation {
   const start = Date.parse(startDate);
   const termDays = Math.round((Date.parse(maturityDate) - start) / DAY_MS);
@@ -136,18 +147,47 @@ export function valuation(
     rateBasis === "annual"
       ? principal * (rate / 100) * (termDays / 365)
       : principal * (rate / 100);
-  const accruedProfit = termDays > 0 ? totalProfit * (elapsedDays / termDays) : 0;
+  const grossAccruedProfit = termDays > 0 ? totalProfit * (elapsedDays / termDays) : 0;
+  const accruedProfit = grossAccruedProfit - paidProfit;
   const value = principal + accruedProfit;
   return {
     termDays,
     elapsedDays,
     totalProfit,
+    grossAccruedProfit,
+    paidProfit,
     accruedProfit,
     value,
     lower: value * 0.9,
     upper: value * 1.1,
     maturityValue: principal + totalProfit,
+    remainingPayout: principal + totalProfit - paidProfit,
   };
+}
+
+/** تقييم عدد من وحدات مركز، مع خصم حصتها من الأرباح الموزعة سابقًا */
+export function positionValuation(
+  inv: Pick<
+    Investment,
+    "principal" | "unitPrice" | "expectedReturn" | "rateBasis" | "startDate" | "maturityDate" | "distributions"
+  >,
+  units: number,
+  valuationDate: string = todayISO(),
+): Valuation {
+  const principal = units * inv.unitPrice;
+  const paidTotal = inv.distributions
+    .filter((d) => d.status === "paid")
+    .reduce((sum, d) => sum + d.amount, 0);
+  const paidProfit = inv.principal > 0 ? (paidTotal * principal) / inv.principal : 0;
+  return valuation(
+    principal,
+    inv.expectedReturn,
+    inv.rateBasis,
+    inv.startDate,
+    inv.maturityDate,
+    valuationDate,
+    paidProfit,
+  );
 }
 
 /** القيمة الاسمية الافتراضية للوحدة لمركز جديد */
@@ -172,10 +212,10 @@ export function unitsNoun(assetType: string): string {
   return assetType === "sukuk" ? "الصكوك" : "الأوراق المالية";
 }
 
-/** العائد السنوي التقديري للمشتري = (القيمة عند الاستحقاق − السعر) ÷ السعر، مُسنوَنًا على الأيام المتبقية */
+/** العائد السنوي التقديري للمشتري = (ما يتبقى حتى الاستحقاق − السعر) ÷ السعر، مُسنوَنًا على الأيام المتبقية */
 export function buyerReturnFromValuation(v: Valuation, price: number): number {
   const remainingDays = v.termDays - v.elapsedDays;
   if (price <= 0 || remainingDays <= 0) return 0;
-  const value = ((v.maturityValue - price) / price) * (365 / remainingDays) * 100;
+  const value = ((v.remainingPayout - price) / price) * (365 / remainingDays) * 100;
   return Math.round(value * 10) / 10;
 }

@@ -27,7 +27,7 @@ import {
   discountPct,
   defaultUnitPrice,
   todayISO,
-  valuation,
+  positionValuation,
   buyerReturnFromValuation,
 } from "@/lib/format";
 
@@ -146,7 +146,7 @@ function reducer(state: State, action: Action): State {
         sellPortion: Math.round((face / inv.principal) * 100),
         discount: disc,
         estimatedBuyerReturn: buyerReturnFromValuation(
-          valuation(face, inv.expectedReturn, inv.rateBasis, inv.startDate, inv.maturityDate),
+          positionValuation(inv, action.units),
           action.askingPrice,
         ),
         remainingMonths: inv.remainingMonths,
@@ -374,7 +374,7 @@ interface Ctx extends State {
 }
 
 const StoreContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "sayyal-demo-v5";
+const STORAGE_KEY = "sayyal-demo-v6";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);

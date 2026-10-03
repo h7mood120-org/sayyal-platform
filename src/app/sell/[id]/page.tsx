@@ -8,7 +8,7 @@ import { Breadcrumb } from "@/components/Shell";
 import { Panel, Modal, Tooltip, RiskBadge, EmptyState, AnimatedNumber } from "@/components/ui";
 import { PlatformChip } from "@/components/PlatformChip";
 import {
-money, pct, months, SAR, discountPct, fmt, valuation, todayISO, unitsLabel, unitsNoun, buyerReturnFromValuation,
+money, pct, months, SAR, discountPct, fmt, positionValuation, todayISO, unitsLabel, unitsNoun, buyerReturnFromValuation,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 export default function SellOrderPage() {
@@ -18,10 +18,7 @@ const { investments, persona, dispatch, toast, listings } = useStore();
 const inv = investments.find((i) => i.id === id);
 const totalUnits = inv ? Math.round(inv.principal / inv.unitPrice) : 0;
 const [valuationDate] = useState(todayISO);
-const valueOf = (u: number) =>
-inv
-? valuation(u * inv.unitPrice, inv.expectedReturn, inv.rateBasis, inv.startDate, inv.maturityDate, valuationDate)
-: null;
+const valueOf = (u: number) => (inv ? positionValuation(inv, u, valuationDate) : null);
 const [units, setUnits] = useState(totalUnits);
 const [price, setPrice] = useState<number>(() => Math.round(valueOf(totalUnits)?.value ?? 0));
 const [priceText, setPriceText] = useState<string>(() => fmt(Math.round(valueOf(totalUnits)?.value ?? 0)));
@@ -176,10 +173,11 @@ className="range mt-5 w-full"
 <div className="mt-4 space-y-0.5 rounded-2xl border border-line bg-canvas px-4 py-2">
 {[
 { k: "الأيام المنقضية", v: <><span className="num">{fmt(val!.elapsedDays)}</span> من <span className="num">{fmt(val!.termDays)}</span> يومًا</> },
-{ k: "الربح المستحق حتى اليوم", v: <span className="num">{money(Math.round(val!.accruedProfit))}</span> },
+{ k: "الربح المستحق منذ البدء", v: <span className="num">{money(Math.round(val!.grossAccruedProfit))}</span> },
+{ k: "الأرباح الموزعة سابقًا", v: <span className="num">− {money(Math.round(val!.paidProfit))}</span> },
 { k: "القيمة في تاريخ التقييم", v: <span className="num">{money(fairPrice)}</span> },
 { k: "نطاق سعر العرض", v: <span className="num">{money(minPrice)} – {money(maxPrice)}</span> },
-{ k: "القيمة عند الاستحقاق", v: <span className="num">{money(Math.round(val!.maturityValue))}</span> },
+{ k: "الأصل والأرباح المتبقية حتى الاستحقاق", v: <span className="num">{money(Math.round(val!.remainingPayout))}</span> },
 ].map((r) => (
 <div key={r.k} className="flex items-center justify-between border-b border-line py-2 last:border-0">
 <span className="text-[12px] text-mute-400">{r.k}</span>
@@ -262,7 +260,7 @@ v: <span className="num text-navy-400">{pct(Math.abs(derived!.disc))}</span>,
 {
 k: "العائد التقديري للمشتري",
 v: <span className="num text-brand-700">{pct(derived!.buyerReturn)}</span>,
-hint: "تقدير = (القيمة عند الاستحقاق − سعر العرض) ÷ سعر العرض، مُسنوَنًا على المدة المتبقية.",
+hint: "تقدير = (الأصل والأرباح المتبقية حتى الاستحقاق − سعر العرض) ÷ سعر العرض، مُسنوَنًا على المدة المتبقية.",
 },
 {
 k: "المبلغ الذي ستحصل عليه",

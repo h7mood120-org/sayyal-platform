@@ -156,7 +156,7 @@ export const seedInvestments: Investment[] = [
     distributions: buildDistributions("inv-005", 20000, 13.1, 7, 3, 2025, 11),
     sellable: true,
     acquiredVia: "platform",
-    acquiredAt: "14 يونيو 2025",
+    acquiredAt: "14 ديسمبر 2025",
   },
   {
     id: "inv-006",
