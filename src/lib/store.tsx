@@ -21,7 +21,22 @@ import { seedInvestments } from "@/data/investments";
 import { seedListings } from "@/data/listings";
 import { seedTransactions, seedNotifications } from "@/data/transactions";
 import { users as seedUsers } from "@/data/users";
-import { txId, nowLabel, estimateBuyerReturn, discountPct } from "@/lib/format";
+import {
+  txId,
+  nowLabel,
+  discountPct,
+  defaultUnitPrice,
+  todayISO,
+  valuation,
+  buyerReturnFromValuation,
+} from "@/lib/format";
+
+/** يضيف عددًا من الأشهر إلى تاريخ ISO */
+function addMonthsISO(iso: string, months: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
 
 /* ------------------------------------------------------------------ */
 
@@ -69,7 +84,7 @@ const initialState: State = {
 };
 
 type Action =
-  | { type: "CREATE_LISTING"; investmentId: string; askingPrice: number; portion: number }
+  | { type: "CREATE_LISTING"; investmentId: string; askingPrice: number; units: number }
   | { type: "CANCEL_LISTING"; listingId: string }
   | { type: "LINK_BANK"; userId: PersonaId; bankAccountId: string; available: number }
   | { type: "COMPLETE_PURCHASE"; listingId: string; buyerId: PersonaId }
@@ -115,7 +130,7 @@ function reducer(state: State, action: Action): State {
     case "CREATE_LISTING": {
       const inv = state.investments.find((i) => i.id === action.investmentId);
       if (!inv) return state;
-      const face = Math.round((inv.principal * action.portion) / 100);
+      const face = action.units * inv.unitPrice;
       const disc = discountPct(face, action.askingPrice);
       const listing: Listing = {
         id: `lst-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
@@ -128,13 +143,11 @@ function reducer(state: State, action: Action): State {
         assetType: inv.assetType,
         faceValue: face,
         askingPrice: action.askingPrice,
-        sellPortion: action.portion,
+        sellPortion: Math.round((face / inv.principal) * 100),
         discount: disc,
-        estimatedBuyerReturn: estimateBuyerReturn(
-          face,
+        estimatedBuyerReturn: buyerReturnFromValuation(
+          valuation(face, inv.expectedReturn, inv.rateBasis, inv.startDate, inv.maturityDate),
           action.askingPrice,
-          inv.expectedReturn,
-          inv.remainingMonths,
         ),
         remainingMonths: inv.remainingMonths,
         remainingPayments: inv.remainingPayments,
@@ -236,8 +249,11 @@ function reducer(state: State, action: Action): State {
             platform: listing.platform,
             assetType: listing.assetType,
             principal: listing.faceValue,
+            unitPrice: defaultUnitPrice(listing.faceValue),
             expectedReturn: listing.estimatedBuyerReturn,
-            maturityDate: "",
+            rateBasis: "annual",
+            startDate: addMonthsISO(todayISO(), -6),
+            maturityDate: addMonthsISO(todayISO(), listing.remainingMonths),
             maturityLabel: listing.maturityLabel,
             remainingMonths: listing.remainingMonths,
             totalMonths: listing.remainingMonths + 6,
@@ -358,7 +374,7 @@ interface Ctx extends State {
 }
 
 const StoreContext = createContext<Ctx | null>(null);
-const STORAGE_KEY = "sayyal-demo-v4";
+const STORAGE_KEY = "sayyal-demo-v5";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);

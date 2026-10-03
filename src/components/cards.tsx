@@ -147,9 +147,9 @@ sold && "opacity-55",
 </p>
 </div>
 <div>
-<p className="label">الخصم</p>
+<p className="label">{listing.discount < 0 ? "العلاوة" : "الخصم"}</p>
 <p className="mt-0.5 text-[14px] font-bold text-navy-400">
-<span className="num">{pct(listing.discount)}</span>
+<span className="num">{pct(Math.abs(listing.discount))}</span>
 </p>
 </div>
 <div>

@@ -35,7 +35,13 @@ issuerSub: string;
 platform: PlatformId;
 assetType: AssetType;
 principal: number;
+/** القيمة الاسمية للصك / الورقة المالية الواحدة */
+unitPrice: number;
 expectedReturn: number;
+/** annual: معدل سنوي · term: معدل يغطي كامل المدة */
+rateBasis: "annual" | "term";
+/** تاريخ بدء الاستثمار (ISO) */
+startDate: string;
 maturityDate: string;
 maturityLabel: string;
 remainingMonths: number;

@@ -7,27 +7,34 @@ import { useStore } from "@/lib/store";
 import { Breadcrumb } from "@/components/Shell";
 import { Panel, Modal, Tooltip, RiskBadge, EmptyState, AnimatedNumber } from "@/components/ui";
 import { PlatformChip } from "@/components/PlatformChip";
-import { money, pct, months, SAR, estimateBuyerReturn, discountPct, fmt } from "@/lib/format";
+import {
+money, pct, months, SAR, discountPct, fmt, valuation, todayISO, unitsLabel, unitsNoun, buyerReturnFromValuation,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 export default function SellOrderPage() {
 const { id } = useParams<{ id: string }>();
 const router = useRouter();
 const { investments, persona, dispatch, toast, listings } = useStore();
 const inv = investments.find((i) => i.id === id);
-const [portion, setPortion] = useState(100);
-const [price, setPrice] = useState<number>(() => (inv ? Math.round(inv.principal * 0.97) : 0));
-const [priceText, setPriceText] = useState<string>(() =>
-inv ? fmt(Math.round(inv.principal * 0.97)) : "",
-);
+const totalUnits = inv ? Math.round(inv.principal / inv.unitPrice) : 0;
+const [valuationDate] = useState(todayISO);
+const valueOf = (u: number) =>
+inv
+? valuation(u * inv.unitPrice, inv.expectedReturn, inv.rateBasis, inv.startDate, inv.maturityDate, valuationDate)
+: null;
+const [units, setUnits] = useState(totalUnits);
+const [price, setPrice] = useState<number>(() => Math.round(valueOf(totalUnits)?.value ?? 0));
+const [priceText, setPriceText] = useState<string>(() => fmt(Math.round(valueOf(totalUnits)?.value ?? 0)));
 const [done, setDone] = useState(false);
 const [newListingId, setNewListingId] = useState<string | null>(null);
-const face = useMemo(() => (inv ? Math.round((inv.principal * portion) / 100) : 0), [inv, portion]);
+const face = inv ? units * inv.unitPrice : 0;
+const val = valueOf(units);
 const derived = useMemo(() => {
 if (!inv) return null;
 const disc = discountPct(face, price);
-const buyerReturn = estimateBuyerReturn(face, price, inv.expectedReturn, inv.remainingMonths);
+const buyerReturn = buyerReturnFromValuation(val!, price);
 return { disc, buyerReturn, fees: 0, net: price };
-}, [inv, face, price]);
+}, [inv, face, price, val]);
 if (!inv) {
 return (
 <EmptyState
@@ -38,8 +45,9 @@ action={<Link href="/portfolio" className="btn-primary px-4 py-2.5">العودة
 />
 );
 }
-const minPrice = Math.round(face * 0.85);
-const maxPrice = face;
+const minPrice = Math.ceil(val!.lower);
+const maxPrice = Math.floor(val!.upper);
+const fairPrice = Math.round(val!.value);
 const speedPct = maxPrice === minPrice ? 0 : ((maxPrice - price) / (maxPrice - minPrice)) * 100;
 const setPriceSafe = (v: number) => {
 const clamped = Math.max(minPrice, Math.min(maxPrice, Math.round(v)));
@@ -47,7 +55,7 @@ setPrice(clamped);
 setPriceText(fmt(clamped));
 };
 const publish = () => {
-dispatch({ type: "CREATE_LISTING", investmentId: inv.id, askingPrice: price, portion });
+dispatch({ type: "CREATE_LISTING", investmentId: inv.id, askingPrice: price, units });
 setDone(true);
 };
 const justListed = useMemo(
@@ -86,6 +94,8 @@ items={[
 <div className="space-y-0.5">
 {[
 { k: "القيمة الاسمية", v: money(inv.principal) },
+{ k: `عدد ${unitsNoun(inv.assetType)}`, v: unitsLabel(totalUnits, inv.assetType) },
+{ k: "القيمة الاسمية للوحدة", v: money(inv.unitPrice) },
 { k: "المتبقي حتى الاستحقاق", v: months(inv.remainingMonths) },
 { k: "العائد", v: pct(inv.expectedReturn) },
 { k: "الدفعات المتبقية", v: String(inv.remainingPayments) },
@@ -120,12 +130,12 @@ className="flex items-center justify-between border-b border-line py-2.5 last:bo
 <div>
 <h2 className="text-[16px] font-bold text-ink">كم تريد أن تبيع؟</h2>
 <p className="mt-1 text-[12.5px] text-mute-400">
-يمكنك التخارج من المركز كاملًا أو من جزء منه.
+اختر عدد {unitsNoun(inv.assetType)} التي تريد بيعها من أصل {unitsLabel(totalUnits, inv.assetType)}.
 </p>
 </div>
 <div className="text-left">
 <p className="text-[24px] font-bold leading-none text-ink">
-<span className="num">{fmt(portion)}%</span>
+<span className="num">{unitsLabel(units, inv.assetType)}</span>
 </p>
 <p className="mt-1.5 text-[12.5px] text-mute-400">
 <span className="num">{money(face)}</span>
@@ -134,34 +144,49 @@ className="flex items-center justify-between border-b border-line py-2.5 last:bo
 </div>
 <input
 type="range"
-min={25}
-max={100}
-step={5}
-value={portion}
-aria-label="نسبة البيع"
+min={1}
+max={totalUnits}
+step={1}
+value={units}
+aria-label={`عدد ${unitsNoun(inv.assetType)}`}
+disabled={totalUnits <= 1}
 onChange={(e) => {
 const v = Number(e.target.value);
-setPortion(v);
-const newFace = Math.round((inv.principal * v) / 100);
-const ratio = price / face || 0.97;
-const next = Math.round(newFace * ratio);
-const clamped = Math.max(Math.round(newFace * 0.85), Math.min(newFace, next));
+setUnits(v);
+const next = valueOf(v)!;
+const ratio = price / val!.value || 1;
+const clamped = Math.max(Math.ceil(next.lower), Math.min(Math.floor(next.upper), Math.round(next.value * ratio)));
 setPrice(clamped);
 setPriceText(fmt(clamped));
 }}
-style={{ backgroundSize: `${((portion - 25) / 75) * 100}% 100%` }}
+style={{ backgroundSize: `${totalUnits <= 1 ? 100 : ((units - 1) / (totalUnits - 1)) * 100}% 100%` }}
 className="range mt-5 w-full"
 />
 <div dir="ltr" className="mt-2 flex justify-between text-[11px] text-mute-500">
-<span className="num">25%</span>
-<span className="num">100%</span>
+<span className="num">1</span>
+<span className="num">{fmt(totalUnits)}</span>
 </div>
 </Panel>
 <Panel className="p-6">
 <h2 className="text-[16px] font-bold text-ink">سعر العرض</h2>
 <p className="mt-1 text-[12.5px] text-mute-400">
-السعر الذي ترغب في التخارج به اليوم. كلما زاد الخصم، زادت سرعة البيع.
+السعر الذي ترغب في التخارج به اليوم، ضمن ±10% من قيمة {unitsNoun(inv.assetType)} في تاريخ التقييم.
+كلما انخفض السعر، زادت سرعة البيع.
 </p>
+<div className="mt-4 space-y-0.5 rounded-2xl border border-line bg-canvas px-4 py-2">
+{[
+{ k: "الأيام المنقضية", v: <><span className="num">{fmt(val!.elapsedDays)}</span> من <span className="num">{fmt(val!.termDays)}</span> يومًا</> },
+{ k: "الربح المستحق حتى اليوم", v: <span className="num">{money(Math.round(val!.accruedProfit))}</span> },
+{ k: "القيمة في تاريخ التقييم", v: <span className="num">{money(fairPrice)}</span> },
+{ k: "نطاق سعر العرض", v: <span className="num">{money(minPrice)} – {money(maxPrice)}</span> },
+{ k: "القيمة عند الاستحقاق", v: <span className="num">{money(Math.round(val!.maturityValue))}</span> },
+].map((r) => (
+<div key={r.k} className="flex items-center justify-between border-b border-line py-2 last:border-0">
+<span className="text-[12px] text-mute-400">{r.k}</span>
+<span className="text-[13px] font-bold text-ink">{r.v}</span>
+</div>
+))}
+</div>
 <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-line bg-white px-4 py-3.5 transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-500/15">
 <input
 value={priceText}
@@ -181,7 +206,7 @@ className="num w-full bg-transparent text-[30px] font-bold text-ink outline-none
 type="range"
 min={minPrice}
 max={maxPrice}
-step={50}
+step={1}
 value={price}
 aria-label="شريط سعر العرض"
 onChange={(e) => setPriceSafe(Number(e.target.value))}
@@ -206,8 +231,8 @@ className="range mt-5 w-full"
 </span>
 </div>
 <div className="mt-4 flex flex-wrap gap-2">
-{[0, 2, 3, 5, 8].map((d) => {
-const target = Math.round(face * (1 - d / 100));
+{[-10, -5, 0, 5, 10].map((d) => {
+const target = Math.min(maxPrice, Math.max(minPrice, Math.round(fairPrice * (1 + d / 100))));
 const active = price === target;
 return (
 <button
@@ -220,7 +245,7 @@ active
 : "border-line bg-canvas text-mute-300 hover:border-[#C2CBD7] hover:text-ink",
 )}
 >
-خصم <span className="num">{d}%</span>
+{d === 0 ? "القيمة الحالية" : <>{d < 0 ? "خصم" : "علاوة"} <span className="num">{Math.abs(d)}%</span></>}
 </button>
 );
 })}
@@ -231,13 +256,13 @@ active
 <div className="space-y-0.5">
 {[
 {
-k: "الخصم عن القيمة الاسمية",
-v: <span className="num text-navy-400">{pct(derived!.disc)}</span>,
+k: derived!.disc < 0 ? "العلاوة على القيمة الاسمية" : "الخصم عن القيمة الاسمية",
+v: <span className="num text-navy-400">{pct(Math.abs(derived!.disc))}</span>,
 },
 {
 k: "العائد التقديري للمشتري",
 v: <span className="num text-brand-700">{pct(derived!.buyerReturn)}</span>,
-hint: "تقدير تجريبي = العائد الأصلي + أثر الخصم موزّعًا على المدة المتبقية.",
+hint: "تقدير = (القيمة عند الاستحقاق − سعر العرض) ÷ سعر العرض، مُسنوَنًا على المدة المتبقية.",
 },
 {
 k: "المبلغ الذي ستحصل عليه",
@@ -292,7 +317,8 @@ className="flex items-center justify-between border-b border-line py-3 last:bord
 {[
 { k: "الأصل", v: inv.issuer },
 { k: "سعر العرض", v: money(price) },
-{ k: "الخصم", v: pct(derived!.disc) },
+{ k: `عدد ${unitsNoun(inv.assetType)}`, v: unitsLabel(units, inv.assetType) },
+{ k: derived!.disc < 0 ? "العلاوة" : "الخصم", v: pct(Math.abs(derived!.disc)) },
 { k: "العائد التقديري للمشتري", v: pct(derived!.buyerReturn) },
 ].map((r) => (
 <div

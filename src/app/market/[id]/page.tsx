@@ -114,7 +114,7 @@ items={[
 {[
 { k: "القيمة الاسمية", v: money(listing.faceValue), icon: <Receipt className="size-4" /> },
 { k: "سعر العرض", v: money(listing.askingPrice), icon: <Wallet className="size-4" />, big: true },
-{ k: "الخصم", v: `${money(totals!.saving)}`, sub: pct(listing.discount), icon: <TrendingUp className="size-4" />, teal: true },
+{ k: totals!.saving < 0 ? "العلاوة" : "الخصم", v: `${money(Math.abs(totals!.saving))}`, sub: `${totals!.saving < 0 ? "علاوة" : "خصم"} ${pct(Math.abs(listing.discount))}`, icon: <TrendingUp className="size-4" />, teal: true },
 { k: "العائد التقديري", v: pct(listing.estimatedBuyerReturn), icon: <TrendingUp className="size-4" />, brand: true, hint: "تقدير تجريبي = العائد الأصلي + أثر الخصم موزّعًا على المدة المتبقية." },
 { k: "التوزيعات المتبقية", v: String(listing.remainingPayments), icon: <Receipt className="size-4" /> },
 { k: "الاستحقاق", v: listing.maturityLabel, icon: <CalendarDays className="size-4" /> },
@@ -138,7 +138,7 @@ m.brand ? "text-brand-700" : m.teal ? "text-navy-400" : "text-ink",
 </p>
 {m.sub && (
 <p className="mt-0.5 text-[11.5px] text-mute-400">
-خصم <span className="num">{m.sub}</span>
+<span className="num">{m.sub}</span>
 </p>
 )}
 </div>
@@ -204,6 +204,7 @@ className="flex items-start gap-3 rounded-2xl border border-line bg-canvas p-4 t
 <p className="mt-1.5 text-[38px] font-bold leading-none text-ink">
 <span className="num">{money(listing.askingPrice)}</span>
 </p>
+{totals!.saving >= 0 ? (
 <p className="mt-2.5 text-[12.5px] text-mute-400">
 بدلًا من{" "}
 <span className="num text-mute-200 line-through decoration-mute-500/60">
@@ -211,6 +212,12 @@ className="flex items-start gap-3 rounded-2xl border border-line bg-canvas p-4 t
 </span>{" "}
 — توفير <span className="num font-semibold text-navy-400">{money(totals!.saving)}</span>
 </p>
+) : (
+<p className="mt-2.5 text-[12.5px] text-mute-400">
+القيمة الاسمية <span className="num text-mute-200">{money(listing.faceValue)}</span>{" "}
+— علاوة <span className="num font-semibold text-navy-400">{money(-totals!.saving)}</span>
+</p>
+)}
 </div>
 <div className="relative mt-5 grid grid-cols-2 gap-3">
 <div className="rounded-xl border border-brand-200 bg-brand-50 p-3">

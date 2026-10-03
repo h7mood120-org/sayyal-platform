@@ -62,8 +62,8 @@ action={<Link href="/portfolio" className="btn-primary px-4 py-2.5">اذهب إ�
 <p className="num mt-0.5 text-[16px] font-bold text-ink">{money(l.askingPrice)}</p>
 </div>
 <div>
-<p className="label">الخصم</p>
-<p className="num mt-0.5 text-[14px] font-bold text-navy-400">{pct(l.discount)}</p>
+<p className="label">{l.discount < 0 ? "العلاوة" : "الخصم"}</p>
+<p className="num mt-0.5 text-[14px] font-bold text-navy-400">{pct(Math.abs(l.discount))}</p>
 </div>
 <div>
 <p className="label">الحالة</p>

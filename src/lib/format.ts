@@ -83,3 +83,99 @@ export function discountPct(faceValue: number, askingPrice: number): number {
   if (faceValue <= 0) return 0;
   return Math.round(((faceValue - askingPrice) / faceValue) * 1000) / 10;
 }
+
+/* ------------------------- تقييم المركز وسعر العرض ------------------------- */
+
+const DAY_MS = 86_400_000;
+
+/** تاريخ اليوم (منتصف الليل UTC) — يُستخدم تاريخًا للتقييم */
+export function todayISO(): string {
+  const d = new Date();
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0, 10);
+}
+
+export interface Valuation {
+  termDays: number;
+  elapsedDays: number;
+  totalProfit: number;
+  accruedProfit: number;
+  /** القيمة في تاريخ التقييم */
+  value: number;
+  /** الحد الأدنى لسعر العرض */
+  lower: number;
+  /** الحد الأعلى لسعر العرض */
+  upper: number;
+  /** القيمة عند الاستحقاق */
+  maturityValue: number;
+}
+
+/**
+ * القيمة في تاريخ التقييم ونطاق سعر العرض:
+ * 1. المدة الكلية بالأيام = تاريخ الاستحقاق − تاريخ البدء
+ * 2. الأيام المنقضية = تاريخ التقييم − تاريخ البدء
+ * 3. إذا كان معدل الربح سنويًا: إجمالي الربح = الأصل × (المعدل ÷ 100) × (المدة الكلية ÷ 365)
+ * 4. إذا كان المعدل يغطي كامل المدة: إجمالي الربح = الأصل × (المعدل ÷ 100)
+ * 5. الربح المستحق = إجمالي الربح × (الأيام المنقضية ÷ المدة الكلية)
+ * 6. القيمة في تاريخ التقييم = الأصل + الربح المستحق
+ * 7. الحد الأدنى = القيمة في تاريخ التقييم × 0.90
+ * 8. الحد الأعلى = القيمة في تاريخ التقييم × 1.10
+ * 9. القيمة عند الاستحقاق = الأصل + إجمالي الربح
+ */
+export function valuation(
+  principal: number,
+  rate: number,
+  rateBasis: "annual" | "term",
+  startDate: string,
+  maturityDate: string,
+  valuationDate: string = todayISO(),
+): Valuation {
+  const start = Date.parse(startDate);
+  const termDays = Math.round((Date.parse(maturityDate) - start) / DAY_MS);
+  const elapsedDays = Math.min(termDays, Math.max(0, Math.round((Date.parse(valuationDate) - start) / DAY_MS)));
+  const totalProfit =
+    rateBasis === "annual"
+      ? principal * (rate / 100) * (termDays / 365)
+      : principal * (rate / 100);
+  const accruedProfit = termDays > 0 ? totalProfit * (elapsedDays / termDays) : 0;
+  const value = principal + accruedProfit;
+  return {
+    termDays,
+    elapsedDays,
+    totalProfit,
+    accruedProfit,
+    value,
+    lower: value * 0.9,
+    upper: value * 1.1,
+    maturityValue: principal + totalProfit,
+  };
+}
+
+/** القيمة الاسمية الافتراضية للوحدة لمركز جديد */
+export function defaultUnitPrice(principal: number): number {
+  for (const u of [1000, 500, 50]) if (principal % u === 0) return u;
+  return 1;
+}
+
+/** «12 صكًا» / «5 أوراق مالية» */
+export function unitsLabel(n: number, assetType: string): string {
+  const sukuk = assetType === "sukuk";
+  if (n === 1) return sukuk ? "صك واحد" : "ورقة مالية واحدة";
+  if (n === 2) return sukuk ? "صكّان" : "ورقتان ماليتان";
+  const mod = n % 100;
+  if (mod >= 3 && mod <= 10) return `${fmt(n)} ${sukuk ? "صكوك" : "أوراق مالية"}`;
+  if (mod >= 11) return `${fmt(n)} ${sukuk ? "صكًا" : "ورقة مالية"}`;
+  return `${fmt(n)} ${sukuk ? "صك" : "ورقة مالية"}`;
+}
+
+/** اسم الوحدة بصيغة الجمع: «الصكوك» / «الأوراق المالية» */
+export function unitsNoun(assetType: string): string {
+  return assetType === "sukuk" ? "الصكوك" : "الأوراق المالية";
+}
+
+/** العائد السنوي التقديري للمشتري = (القيمة عند الاستحقاق − السعر) ÷ السعر، مُسنوَنًا على الأيام المتبقية */
+export function buyerReturnFromValuation(v: Valuation, price: number): number {
+  const remainingDays = v.termDays - v.elapsedDays;
+  if (price <= 0 || remainingDays <= 0) return 0;
+  const value = ((v.maturityValue - price) / price) * (365 / remainingDays) * 100;
+  return Math.round(value * 10) / 10;
+}
